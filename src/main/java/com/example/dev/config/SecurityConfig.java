@@ -18,68 +18,71 @@ import com.example.dev.filter.JwtFilter;
 @EnableWebSecurity
 public class SecurityConfig {
 
-	
-	    private final JwtFilter jwtFilter;
-	    private final UserDetailsService userDetailsService;
-	    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
-	    
-	    public SecurityConfig(JwtFilter jwtFilter, UserDetailsService userDetailsService, 
-	                         JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint) {
-	        this.jwtFilter = jwtFilter;
-	        this.userDetailsService = userDetailsService;
-	        this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
-	    }
+	private final JwtFilter jwtFilter;
+	private final UserDetailsService userDetailsService;
+	private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
-	    @Bean
-	    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+	public SecurityConfig(JwtFilter jwtFilter, UserDetailsService userDetailsService,
+			JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint) {
+		this.jwtFilter = jwtFilter;
+		this.userDetailsService = userDetailsService;
+		this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
+	}
 
-	        http
-	            .csrf(csrf -> csrf.disable())
-	            .authorizeHttpRequests(auth -> auth
+	@Bean
+	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-	                // ✅ Allow HTML pages & static resources
-	                .requestMatchers(
-	                        "/", 
-	                        "/login.html",
-	                        "/dashboard.html",
-	                        "/**/*.html",
-	                        "/css/**",
-	                        "/js/**",
-	                        "/images/**"
-	                ).permitAll()
+		http
+				.csrf(csrf -> csrf.disable())
+				.cors(cors -> cors.configurationSource(request -> {
+					var corsConfiguration = new org.springframework.web.cors.CorsConfiguration();
+					corsConfiguration.setAllowedOrigins(java.util.List.of("*"));
+					corsConfiguration.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+					corsConfiguration.setAllowedHeaders(java.util.List.of("*"));
+					return corsConfiguration;
+				}))
+				.authorizeHttpRequests(auth -> auth
 
-	                // ✅ Allow Auth & Public APIs
-	                .requestMatchers(
-	                        "/auth/api/v1/login",
-	                        "/user/api/v1/add",
-	                        "/lead/api/v1/add",
-	                        "/lead/api/v1/count"
-	                ).permitAll()
+						// ✅ Allow HTML pages & static resources
+						.requestMatchers(
+								"/",
+								"/login.html",
+								"/dashboard.html",
+								"/**/*.html",
+								"/css/**",
+								"/js/**",
+								"/images/**")
+						.permitAll()
 
-	                // ✅ Secure APIs (JWT required)
-	                .requestMatchers(
-	                        "/lead/api/v1/get-leads",
-	                        "/lead/api/v1/update",
-	                        "/lead/api/v1/update-status",
-	                        "/lead/api/v1/delete",
-	                        "/api/users/**"
-	                ).authenticated()
+						// ✅ Allow Auth & Public APIs
+						.requestMatchers(
+								"/auth/api/v1/login",
+								"/user/api/v1/add",
+								"/lead/api/v1/add",
+								"/lead/api/v1/count")
+						.permitAll()
 
-	                // ✅ Any other request needs authentication
-	                .anyRequest().authenticated()
-	            )
-	            .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
-	            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+						// ✅ Secure APIs (JWT required)
+						.requestMatchers(
+								"/lead/api/v1/get-leads",
+								"/lead/api/v1/update",
+								"/lead/api/v1/update-status",
+								"/lead/api/v1/delete",
+								"/api/users/**")
+						.authenticated()
 
-	        return http.build();
-	    }
+						// ✅ Any other request needs authentication
+						.anyRequest().authenticated())
+				.exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
+				.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
+		return http.build();
+	}
 
-	    @Bean
-	    public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
-	            throws Exception {
-	        return config.getAuthenticationManager();
-	    }
+	@Bean
+	public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
+			throws Exception {
+		return config.getAuthenticationManager();
+	}
 
-	    
 }
