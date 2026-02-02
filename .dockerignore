@@ -1,9 +1,10 @@
 target
 .git
+node_modules
+*.log
 .mvn
 mvnw
 mvnw.cmd
-.gitignore
 Dockerfile
 README.md
 *.md
